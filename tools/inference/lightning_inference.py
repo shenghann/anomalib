@@ -65,10 +65,32 @@ def infer():
 
     transform_config = config.dataset.transform_config.val if "transform_config" in config.dataset.keys() else None
     dataset = InferenceDataset(
-        args.input, image_size=tuple(config.dataset.image_size), transform_config=transform_config
+        config.dataset.path, args.input, image_size=tuple(config.dataset.image_size), transform_config=transform_config
     )
     dataloader = DataLoader(dataset)
-    trainer.predict(model=model, dataloaders=[dataloader])
+    pred = trainer.predict(model=model, dataloaders=[dataloader])
+
+    # summarize results
+    import pandas as pd
+    from sklearn.metrics import confusion_matrix
+    pred_data = []
+    for results in pred:
+        pred_data.append({
+            'image_path': results['image_path'][0],
+            # 'map': results['anomaly_maps'][0].tolist(),
+            'score': results['pred_scores'][0].tolist(),
+            'prediction': results['pred_labels'][0].tolist(),
+            # 'mask': results['pred_masks'][0].tolist(),
+        })
+    df_pred = pd.DataFrame(pred_data)
+    # ground truth - positive class = True (anomalous)
+    df_pred['installation'] = df_pred.image_path.str.contains('bad')
+    cm = confusion_matrix(df_pred['installation'], df_pred['prediction'])
+    print(cm)
+    cm_norm = confusion_matrix(df_pred['installation'], df_pred['prediction'], normalize='true') * 100
+    print(cm_norm)
+    # df_pred.to_parquet(args.output + '/results.pq')
+    df_pred.to_csv(args.output + '/results.csv')
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from pytorch_lightning import LightningDataModule
 
 from .btech import BTech
 from .folder import Folder
+from .csv import CSV
 from .inference import InferenceDataset
 from .mvtec import MVTec
 
@@ -79,6 +80,25 @@ def get_datamodule(config: Union[DictConfig, ListConfig]) -> LightningDataModule
             transform_config_val=config.dataset.transform_config.val,
             create_validation_set=config.dataset.create_validation_set,
         )
+    elif config.dataset.format.lower() == "csv":
+        datamodule = CSV(
+            root=config.dataset.path,
+            train_csv=config.dataset.train_csv,
+            val_csv=config.dataset.val_csv,
+            test_csv=config.dataset.test_csv,
+            task=config.dataset.task,
+            mask_dir=config.dataset.mask,
+            extensions=config.dataset.extensions,
+            split_ratio=config.dataset.split_ratio,
+            seed=config.project.seed,
+            image_size=(config.dataset.image_size[0], config.dataset.image_size[1]),
+            train_batch_size=config.dataset.train_batch_size,
+            test_batch_size=config.dataset.test_batch_size,
+            num_workers=config.dataset.num_workers,
+            transform_config_train=config.dataset.transform_config.train,
+            transform_config_val=config.dataset.transform_config.val,
+            create_validation_set=config.dataset.create_validation_set,
+        )
     else:
         raise ValueError(
             "Unknown dataset! \n"
@@ -95,4 +115,5 @@ __all__ = [
     "Folder",
     "InferenceDataset",
     "MVTec",
+    "CSV"
 ]

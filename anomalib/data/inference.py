@@ -18,6 +18,7 @@ class InferenceDataset(Dataset):
 
     def __init__(
         self,
+        root: Union[str, Path],
         path: Union[str, Path],
         pre_process: Optional[PreProcessor] = None,
         image_size: Optional[Union[int, Tuple[int, int]]] = None,
@@ -36,7 +37,7 @@ class InferenceDataset(Dataset):
         """
         super().__init__()
 
-        self.image_filenames = get_image_filenames(path)
+        self.image_filenames = get_image_filenames(path, root)
 
         if pre_process is None:
             self.pre_process = PreProcessor(transform_config, image_size)

@@ -5,21 +5,23 @@
 
 import math
 import warnings
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import List, Optional, Tuple, Union
 
 import cv2
+import pandas as pd
 import numpy as np
 import torch.nn.functional as F
 from torch import Tensor
 from torchvision.datasets.folder import IMG_EXTENSIONS
 
 
-def get_image_filenames(path: Union[str, Path]) -> List[Path]:
+def get_image_filenames(path: Union[str, Path], root: Union[str, Path] = None) -> List[Path]:
     """Get image filenames.
 
     Args:
         path (Union[str, Path]): Path to image or image-folder.
+        root (Union[str, Path]): root path
 
     Returns:
         List[Path]: List of image filenames
@@ -29,6 +31,12 @@ def get_image_filenames(path: Union[str, Path]) -> List[Path]:
 
     if isinstance(path, str):
         path = Path(path)
+
+    if path.is_file() and path.suffix == '.csv':
+        csv_data = pd.read_csv(path)
+        if root:
+            csv_data.path = csv_data.apply(lambda row: Path(root) / PureWindowsPath(row.path).as_posix(), axis=1)
+        image_filenames = csv_data.path.tolist()
 
     if path.is_file() and path.suffix in IMG_EXTENSIONS:
         image_filenames = [path]
