@@ -144,8 +144,8 @@ class AnomalyModule(pl.LightningModule, ABC):
         if self.threshold_method == ThresholdMethod.ADAPTIVE:
             self._compute_adaptive_threshold(outputs)
         self._collect_outputs(self.image_metrics, self.pixel_metrics, outputs)
-        self._log_metrics()
-
+        self._log_metrics(outputs)
+        
     def test_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
         """Compute and save anomaly scores of the test set.
 
@@ -217,13 +217,21 @@ class AnomalyModule(pl.LightningModule, ABC):
             output = output.cpu()
         return output
 
-    def _log_metrics(self) -> None:
+    def _log_metrics(self, outputs=None) -> None:
         """Log computed performance metrics."""
         if self.pixel_metrics.update_called:
             self.log_dict(self.pixel_metrics, prog_bar=True)
             self.log_dict(self.image_metrics, prog_bar=False)
         else:
             self.log_dict(self.image_metrics, prog_bar=True)
+
+        # log raw outputs: ['image', 'image_path', 'label', 'anomaly_maps', 'pred_scores']
+        # mainly for anomaly maps and scores
+        if outputs:
+            outputs = [{k: v for k, v in d.items() if k != 'image'} for d in outputs]
+            import pickle
+            with open('/home/shenghan/padim/anomalib-new/results/padim/val.pickle', 'wb') as f:
+                pickle.dump(outputs, f)
 
     def _load_normalization_class(self, state_dict: OrderedDict[str, Tensor]) -> None:
         """Assigns the normalization method to use."""

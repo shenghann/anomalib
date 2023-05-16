@@ -82,7 +82,35 @@ def infer():
     dataloader = DataLoader(dataset)
 
     # generate predictions
-    trainer.predict(model=model, dataloaders=[dataloader])
+    predictions = trainer.predict(model=model, dataloaders=[dataloader])
+
+    # NEW: export inferencing results
+    # colect results
+    pred_data = []
+    map_data = []
+    for results in predictions:
+        pred_data.append({
+            'image_path': results['image_path'][0],
+            'score': results['pred_scores'][0].tolist(),
+            'prediction': results['pred_labels'][0].tolist(),
+        })
+        map_data.append({
+            'image_path': results['image_path'][0],
+            'map': results['anomaly_maps'][0][0].numpy(),
+        })
+
+    import pandas as pd
+    import pickle
+    df_pred = pd.DataFrame(pred_data)
+    # ground truth - positive class = True (anomalous)
+    df_pred['installation'] = df_pred.image_path.str.contains('bad')
+    # write results CSV
+    df_pred.to_csv(Path(args.output) + 'results.csv')
+
+    # write anomaly map pickle
+    df_map = pd.DataFrame(map_data)
+    with open(Path(args.output) + 'map.pickle', 'wb') as f:
+        pickle.dump(df_map, f)
 
 
 if __name__ == "__main__":
